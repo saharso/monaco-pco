@@ -54,10 +54,10 @@ const constants = {
     MONACO_COMMAND_CLASS_NAME: 'mtk6'
 }
 
-const CodeEditorToolbar = ({...props})=>{
+const CodeEditorToolbar = ({onToolbarClose, ...props})=>{
 
     return <div className={'b-editor__toolbar'}>
-        <button className={'b-editor__tolbar__btn-close'}>X</button>
+        <button onClick={onToolbarClose} className={'b-editor__tolbar__btn-close'}>X</button>
         <div>
             hello
             {props.children}
@@ -101,7 +101,6 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
         const wrapper: HTMLElement = wrapperRef.current;
 
         loader.init().then(monaco => {
-            console.log(monaco);
             const properties = {
                 language:  "sql",
             }
@@ -125,25 +124,30 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
         let existingLineNumber: number;
 
         function removeExistingToolbar(){
-            viewZoneId && editor.changeViewZones(function(changeAccessor) {
+            if(!viewZoneId) return;
+            editor.changeViewZones(function(changeAccessor) {
                 changeAccessor.removeZone(viewZoneId);
             });
+            existingCommand = existingLineNumber = null;
         }
 
         function addToolbar(lineNumber: number, currentCommand: SQLCommandsEnum) {
+
+            const toolbar = ToolbarMap.get(currentCommand);
+
             removeExistingToolbar();
-            editor.changeViewZones(function(changeAccessor) {
+
+            toolbar && editor.changeViewZones(function(changeAccessor) {
 
                 const domNode = document.createElement('div');
 
-                const toolbar = ToolbarMap.get(currentCommand);
-                console.log(toolbar);
+
                 setHeaderToolbarComp(toolbar);
 
                 domNode.className = 'b-editor--toolbar__wrapper';
 
                 ReactDOM.render(
-                    <CodeEditorToolbar>
+                    <CodeEditorToolbar onToolbarClose={()=>{removeExistingToolbar()}}>
                         {toolbar?.call(null)}
                     </CodeEditorToolbar>,
                     domNode

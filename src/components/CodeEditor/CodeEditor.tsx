@@ -4,7 +4,7 @@ import './CodeEditor.scss';
 import { loader } from "@monaco-editor/react";
 import CodeEditorToolbarWrapper from './components/ToolbarWrapper';
 import useOnToolbarItemClick from './hooks/useOnToolbarItemClick';
-import constants from './models/consts';
+import monacoClassNames from './models/consts.monacoClassNames';
 import SQLCommandsEnum from './models/enum.SQLCommands';
 import ToolbarControls from './components/ToolbarControls';
 
@@ -13,7 +13,7 @@ const codeEditorUtils = {
     isCommand: function(target: any) {
         const elemnt = target instanceof Element ? target : target.element;
         const targetClassName = elemnt.className;
-        const isCommand = targetClassName === constants.MONACO_COMMAND_CLASS_NAME;
+        const isCommand = targetClassName === monacoClassNames.SQL_COMMAND;
         return isCommand;
     },
     getClusterCommand: function(element: HTMLElement): SQLCommandsEnum {

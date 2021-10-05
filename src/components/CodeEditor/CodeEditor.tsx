@@ -7,6 +7,7 @@ import useOnToolbarItemClick from './hooks/useOnToolbarItemClick';
 import monacoClassNames from './models/consts.monacoClassNames';
 import SQLCommandsEnum from './models/enum.SQLCommands';
 import ToolbarControls from './components/ToolbarControls';
+import monacoConfig from "./models/consts.monacoConfig";
 
 
 const codeEditorUtils = {
@@ -47,11 +48,8 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
         const wrapper: HTMLElement = wrapperRef.current;
 
         loader.init().then(monaco => {
-            const properties = {
-                language:  "sql",
-            }
 
-            setEditor(monaco.editor.create(wrapper,  properties));
+            setEditor(monaco.editor.create(wrapper,  monacoConfig));
         });
     }, [wrapperRef]);
 

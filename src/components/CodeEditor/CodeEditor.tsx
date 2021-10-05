@@ -11,44 +11,77 @@ enum SQLCommandsEnum {
     SELECT = 'SELECT',
 }
 
+interface IToolbarConfig {
+    label: string;
+    callback: Function;
+}
 const ToolbarMap: Map<SQLCommandsEnum, Function> = new Map();
 
-const SetToolbar = ()=>{
-    return <>
-        <button>some SET function</button>
-        <button>another SET function</button>
-    </>
-}
-const FromToolbar = ()=>{
-    return <>
-        <button>some FROM function</button>
-        <button>another FROM function</button>
-    </>
-}
-const AppendToolbar = ()=>{
-    return <>
-        <button>some APPEND function</button>
-        <button>another APPEND function</button>
-    </>
-}
-const AsToolbar = ()=>{
-    return <>
-        <button>some AS function</button>
-        <button>another AS function</button>
-    </>
-}
-const SelectToolbar = ()=>{
-    return <>
-        <button>some SELECT function</button>
-        <button>another SELECT function</button>
-    </>
+function useOnToolbarItemClick() {
+
+    const [value, setValue] = useState();
+
+    return {
+        callback: (value)=>{
+            setValue(value);
+        },
+        value,
+    }
 }
 
-ToolbarMap.set(SQLCommandsEnum.SET, ()=> <SetToolbar/>);
-ToolbarMap.set(SQLCommandsEnum.FROM, ()=> <FromToolbar/>);
-ToolbarMap.set(SQLCommandsEnum.APPEND, ()=> <AppendToolbar/>);
-ToolbarMap.set(SQLCommandsEnum.AS, ()=> <AsToolbar/>);
-ToolbarMap.set(SQLCommandsEnum.SELECT, ()=> <SelectToolbar/>);
+export type ToobarControlsProps = {
+    callback: Function;
+    commandKey: SQLCommandsEnum;
+}
+const ToolbarControls: React.FunctionComponent<ToobarControlsProps> = ({callback, commandKey})=> {
+    const hook = useOnToolbarItemClick();
+
+    useEffect(() => {
+        callback(hook.value);
+    }, [hook.value])
+
+    const SetToolbar = () => {
+        return <>
+            <button onClick={() => hook.callback('some SET function')}>some SET function</button>
+            <button onClick={() => hook.callback('another SET function')}>another SET function</button>
+        </>
+    }
+    const FromToolbar = () => {
+        return <>
+            <button onClick={() => hook.callback('some FROM function')}>some FROM function</button>
+            <button onClick={() => hook.callback('another FROM function')}>another FROM function</button>
+        </>
+    }
+    const AppendToolbar = () => {
+        return <>
+            <button onClick={() => hook.callback('some APPEND function')}>some APPEND function</button>
+            <button onClick={() => hook.callback('another APPEND function')}>another APPEND function</button>
+        </>
+    }
+    const AsToolbar = () => {
+        return <>
+            <button onClick={() => hook.callback('some APPEND function')}>some APPEND function</button>
+            <button onClick={() => hook.callback('another APPEND function')}>another APPEND function</button>
+        </>
+    }
+    const SelectToolbar = () => {
+        return <>
+            <button onClick={() => hook.callback('some Select function')}>some Select function</button>
+            <button onClick={() => hook.callback('another Select function')}>another Select function</button>
+        </>
+    }
+
+    ToolbarMap.set(SQLCommandsEnum.SET, () => <SetToolbar/>);
+    ToolbarMap.set(SQLCommandsEnum.FROM, () => <FromToolbar/>);
+    ToolbarMap.set(SQLCommandsEnum.APPEND, () => <AppendToolbar/>);
+    ToolbarMap.set(SQLCommandsEnum.AS, () => <AsToolbar/>);
+    ToolbarMap.set(SQLCommandsEnum.SELECT, () => <SelectToolbar/>);
+
+    return <>
+        {ToolbarMap.has(commandKey) && ToolbarMap.get(commandKey)()}
+    </>
+
+}
 
 const constants = {
     MONACO_COMMAND_CLASS_NAME: 'mtk6'
@@ -95,6 +128,8 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
     const [headerToolbarComp, setHeaderToolbarComp] = useState(null);
 
+    const onToolbarClick = useOnToolbarItemClick();
+
     useEffect(()=>{
         if(!wrapperRef) return;
 
@@ -133,22 +168,20 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
         function addToolbar(lineNumber: number, currentCommand: SQLCommandsEnum) {
 
-            const toolbar = ToolbarMap.get(currentCommand);
-
             removeExistingToolbar();
 
-            toolbar && editor.changeViewZones(function(changeAccessor) {
+            editor.changeViewZones(function(changeAccessor) {
 
                 const domNode = document.createElement('div');
-
-
-                setHeaderToolbarComp(toolbar);
 
                 domNode.className = 'b-editor--toolbar__wrapper';
 
                 ReactDOM.render(
                     <CodeEditorToolbar onToolbarClose={()=>{removeExistingToolbar()}}>
-                        {toolbar?.call(null)}
+                        <ToolbarControls
+                            commandKey={currentCommand}
+                            callback={(e)=>{console.log(e)}}
+                        />
                     </CodeEditorToolbar>,
                     domNode
                 );
@@ -188,6 +221,10 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
             showEvent(e);
         });
     }, [editor]);
+
+    useEffect(()=>{
+        console.log(onToolbarClick.value);
+    }, [onToolbarClick.value])
 
     return (
         <div className={'b-editor'}>

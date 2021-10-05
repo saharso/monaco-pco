@@ -3,9 +3,52 @@ import ReactDOM from "react-dom";
 import './CodeEditor.scss';
 import { loader } from "@monaco-editor/react";
 
-export type CodeEditorProps = {
-    value: string;
-};
+enum SQLCommandsEnum {
+    SET = 'SET',
+    FROM = 'FROM',
+    APPEND = 'APPEND',
+    AS = 'AS',
+    SELECT = 'SELECT',
+}
+
+const ToolbarMap: Map<SQLCommandsEnum, Function> = new Map();
+
+const SetToolbar = ()=>{
+    return <>
+        <button>some SET function</button>
+        <button>another SET function</button>
+    </>
+}
+const FromToolbar = ()=>{
+    return <>
+        <button>some FROM function</button>
+        <button>another FROM function</button>
+    </>
+}
+const AppendToolbar = ()=>{
+    return <>
+        <button>some APPEND function</button>
+        <button>another APPEND function</button>
+    </>
+}
+const AsToolbar = ()=>{
+    return <>
+        <button>some AS function</button>
+        <button>another AS function</button>
+    </>
+}
+const SelectToolbar = ()=>{
+    return <>
+        <button>some SELECT function</button>
+        <button>another SELECT function</button>
+    </>
+}
+
+ToolbarMap.set(SQLCommandsEnum.SET, ()=> <SetToolbar/>);
+ToolbarMap.set(SQLCommandsEnum.FROM, ()=> <FromToolbar/>);
+ToolbarMap.set(SQLCommandsEnum.APPEND, ()=> <AppendToolbar/>);
+ToolbarMap.set(SQLCommandsEnum.AS, ()=> <AsToolbar/>);
+ToolbarMap.set(SQLCommandsEnum.SELECT, ()=> <SelectToolbar/>);
 
 const constants = {
     MONACO_COMMAND_CLASS_NAME: 'mtk6'
@@ -29,12 +72,17 @@ const codeEditorUtils = {
         const isCommand = targetClassName === constants.MONACO_COMMAND_CLASS_NAME;
         return isCommand;
     },
-    getClusterCommand: function(element: HTMLElement) {
+    getClusterCommand: function(element: HTMLElement): SQLCommandsEnum {
         if(this.isCommand(element)) {
-            return element.textContent.toUpperCase();
+            return element.textContent.toUpperCase() as SQLCommandsEnum;
         }
     },
 }
+
+export type CodeEditorProps = {
+    value: string;
+};
+
 const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     {
         value,
@@ -44,6 +92,8 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     const wrapperRef = useRef(null);
 
     const [editor, setEditor] = useState(null);
+
+    const [headerToolbarComp, setHeaderToolbarComp] = useState(null);
 
     useEffect(()=>{
         if(!wrapperRef) return;
@@ -80,12 +130,25 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
             });
         }
 
-        function addToolbar(lineNumber: number) {
+        function addToolbar(lineNumber: number, currentCommand: SQLCommandsEnum) {
             removeExistingToolbar();
             editor.changeViewZones(function(changeAccessor) {
+
                 const domNode = document.createElement('div');
+
+                const toolbar = ToolbarMap.get(currentCommand);
+                console.log(toolbar);
+                setHeaderToolbarComp(toolbar);
+
                 domNode.className = 'b-editor--toolbar__wrapper';
-                ReactDOM.render(<CodeEditorToolbar/>, domNode);
+
+                ReactDOM.render(
+                    <CodeEditorToolbar>
+                        {toolbar?.call(null)}
+                    </CodeEditorToolbar>,
+                    domNode
+                );
+
                 viewZoneId = changeAccessor.addZone({
                     afterLineNumber: lineNumber - 1,
                     heightInLines: 3,
@@ -106,8 +169,8 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
                 // execute if not same command as previous, unless line number not as previous
                 if(currentLineNumber !== existingLineNumber || existingCommand !== currentCommand) {
 
-                    addToolbar(currentLineNumber);
-                    console.log('should run once')
+                    addToolbar(currentLineNumber, currentCommand);
+
                 }
                 existingCommand = currentCommand;
                 existingLineNumber = currentLineNumber;
@@ -125,7 +188,7 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     return (
         <div className={'b-editor'}>
             <header className={'b-editor__header'}>
-
+                {headerToolbarComp}
             </header>
             <div className={'b-editor__panel'} ref={wrapperRef} />
         </div>

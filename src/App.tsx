@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.scss';
-import CodeEditor from "./components/Monaco/Monaco";
+import CodeEditor from "./components/CodeEditor/CodeEditor";
 
 const valueMock = "SET partition_date = UNIX_EPOCH_TO_DATE(time);\n" +
         "SET NewNew = headers.head.index + 1;\n" +
@@ -14,15 +14,15 @@ const valueMock = "SET partition_date = UNIX_EPOCH_TO_DATE(time);\n" +
         "       NewNew AS newnew:DOUBLE,\n" +
         "  FROM \"NY Taxi Rides\" LEFT JOIN \"key to shard target\" testtest ON testtest.key = data.payment_type \n" +
         "    GROUP BY NewNew,\n" +
-        "          PARTITION_TIME(partition_date),\n" +
-        "          data.dropoff_datetime,\n" +
-        "          data.extra\n" +
-        "    APPEND ON DUPLICATE\n" +
+        "           PARTITION_TIME(partition_date),\n" +
+        "           data.dropoff_datetime,\n" +
+        "           data.extra\n" +
+        "       APPEND ON DUPLICATE\n" +
         "-- read more about export job in the documentation button >> (?)\n";
 
 function App() {
   return (
-    <div className="App">
+    <div className="b-app">
       <CodeEditor
         value={valueMock}
       />

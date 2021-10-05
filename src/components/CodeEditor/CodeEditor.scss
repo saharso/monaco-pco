@@ -1,0 +1,11 @@
+.b-editor {
+  flex: 1 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.b-editor__header {
+  height: 3em;
+}
+.b-editor__panel {
+  height: 100%;
+}

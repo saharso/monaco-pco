@@ -126,7 +126,7 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
     const [editor, setEditor] = useState(null);
 
-    const [headerToolbarComp, setHeaderToolbarComp] = useState(null);
+    const [command, setCommand] = useState(null);
 
     const onToolbarClick = useOnToolbarItemClick();
 
@@ -208,6 +208,8 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
                     addToolbar(currentLineNumber, currentCommand);
 
+                    setCommand(currentCommand);
+
                 }
                 existingCommand = currentCommand;
                 existingLineNumber = currentLineNumber;
@@ -229,7 +231,10 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     return (
         <div className={'b-editor'}>
             <header className={'b-editor__header'}>
-                {headerToolbarComp}
+                <ToolbarControls
+                    commandKey={command}
+                    callback={(e)=>{console.log('From header', e)}}
+                />
             </header>
             <div className={'b-editor__panel'} ref={wrapperRef} />
         </div>

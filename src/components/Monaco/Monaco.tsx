@@ -1,16 +1,20 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { loader } from "@monaco-editor/react";
 
 export type CodeEditorProps = {
-
+    value: string;
 
 };
 
 const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
-
+    {
+        value,
+    }
 ) => {
 
     const wrapperRef = useRef(null);
+
+    const [editor, setEditor] = useState(null);
 
     useEffect(()=>{
         if(!wrapperRef) return;
@@ -21,13 +25,17 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
             console.log(monaco);
             wrapper.style.height = "100vh";
             const properties = {
-                value: "function hello() {\n\talert(\"Hello world!\");\n}",
-                language:  "javascript",
+                language:  "sql",
             }
 
-            monaco.editor.create(wrapper,  properties);
+            setEditor(monaco.editor.create(wrapper,  properties));
         });
     }, [wrapperRef]);
+
+    useEffect(()=>{
+        if(!value || !editor) return;
+        editor.getModel().setValue(value);
+    }, [editor, value])
 
     return (
         <>

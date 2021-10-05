@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import ReactDOM from "react-dom";
 import './CodeEditor.scss';
 import { loader } from "@monaco-editor/react";
 
@@ -10,13 +11,29 @@ const constants = {
     MONACO_COMMAND_CLASS_NAME: 'mtk6'
 }
 
+const CodeEditorToolbar = ({...props})=>{
+
+    return <div className={'b-editor__toolbar'}>
+        <button className={'b-editor__tolbar__btn-close'}>X</button>
+        <div>
+            hello
+            {props.children}
+        </div>
+    </div>
+}
+
 const codeEditorUtils = {
-    isCommand: (element: HTMLElement)=>{
-        const target = element;
-        const targetClassName = target.className;
+    isCommand: function(target: any) {
+        const elemnt = target instanceof Element ? target : target.element;
+        const targetClassName = elemnt.className;
         const isCommand = targetClassName === constants.MONACO_COMMAND_CLASS_NAME;
         return isCommand;
-    }
+    },
+    getClusterCommand: function(element: HTMLElement) {
+        if(this.isCommand(element)) {
+            return element.textContent.toUpperCase();
+        }
+    },
 }
 const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     {
@@ -50,16 +67,51 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
     useEffect(()=>{
         if(!editor) return;
+
+        let viewZoneId: string;
+
+        let existingCommand: string;
+
+        let existingLineNumber: number;
+
+        function removeExistingToolbar(){
+            viewZoneId && editor.changeViewZones(function(changeAccessor) {
+                changeAccessor.removeZone(viewZoneId);
+            });
+        }
+
+        function addToolbar(lineNumber: number) {
+            removeExistingToolbar();
+            editor.changeViewZones(function(changeAccessor) {
+                const domNode = document.createElement('div');
+                domNode.className = 'b-editor--toolbar__wrapper';
+                ReactDOM.render(<CodeEditorToolbar/>, domNode);
+                viewZoneId = changeAccessor.addZone({
+                    afterLineNumber: lineNumber - 1,
+                    heightInLines: 3,
+                    domNode: domNode
+                });
+            });
+
+        }
+
         function showEvent(e){
+
             const targetElement = e.target.element;
             if(!targetElement) return;
-            
-            if(codeEditorUtils.isCommand(targetElement)) {
-                console.log(e.target.element?.textContent);
-                const targetText = targetElement.textContent;
-                if(targetText.toUpperCase() === 'BY') {
-                    console.log(targetElement.previousElementSibling)
+
+            if(codeEditorUtils.isCommand(e.target)) {
+                const currentCommand = codeEditorUtils.getClusterCommand(targetElement);
+                const currentLineNumber = e.target.position.lineNumber;
+                // execute if not same command as previous, unless line number not as previous
+                if(currentLineNumber !== existingLineNumber || existingCommand !== currentCommand) {
+
+                    addToolbar(currentLineNumber);
+                    console.log('should run once')
                 }
+                existingCommand = currentCommand;
+                existingLineNumber = currentLineNumber;
+
             }
         }
         editor.onMouseMove(function (e) {

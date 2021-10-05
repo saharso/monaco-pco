@@ -2,101 +2,12 @@ import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from "react-dom";
 import './CodeEditor.scss';
 import { loader } from "@monaco-editor/react";
+import CodeEditorToolbarWrapper from './components/ToolbarWrapper';
+import useOnToolbarItemClick from './hooks/useOnToolbarItemClick';
+import constants from './models/consts';
+import SQLCommandsEnum from './models/enum.SQLCommands';
+import ToolbarControls from './components/ToolbarControls';
 
-enum SQLCommandsEnum {
-    SET = 'SET',
-    FROM = 'FROM',
-    APPEND = 'APPEND',
-    AS = 'AS',
-    SELECT = 'SELECT',
-}
-
-interface IToolbarConfig {
-    label: string;
-    callback: Function;
-}
-const ToolbarMap: Map<SQLCommandsEnum, Function> = new Map();
-
-function useOnToolbarItemClick() {
-
-    const [value, setValue] = useState();
-
-    return {
-        callback: (value)=>{
-            setValue(value);
-        },
-        value,
-    }
-}
-
-export type ToobarControlsProps = {
-    callback: Function;
-    commandKey: SQLCommandsEnum;
-}
-const ToolbarControls: React.FunctionComponent<ToobarControlsProps> = ({callback, commandKey})=> {
-    const hook = useOnToolbarItemClick();
-
-    useEffect(() => {
-        callback(hook.value);
-    }, [hook.value])
-
-    const SetToolbar = () => {
-        return <>
-            <button onClick={() => hook.callback('some SET function')}>some SET function</button>
-            <button onClick={() => hook.callback('another SET function')}>another SET function</button>
-        </>
-    }
-    const FromToolbar = () => {
-        return <>
-            <button onClick={() => hook.callback('some FROM function')}>some FROM function</button>
-            <button onClick={() => hook.callback('another FROM function')}>another FROM function</button>
-        </>
-    }
-    const AppendToolbar = () => {
-        return <>
-            <button onClick={() => hook.callback('some APPEND function')}>some APPEND function</button>
-            <button onClick={() => hook.callback('another APPEND function')}>another APPEND function</button>
-        </>
-    }
-    const AsToolbar = () => {
-        return <>
-            <button onClick={() => hook.callback('some APPEND function')}>some APPEND function</button>
-            <button onClick={() => hook.callback('another APPEND function')}>another APPEND function</button>
-        </>
-    }
-    const SelectToolbar = () => {
-        return <>
-            <button onClick={() => hook.callback('some Select function')}>some Select function</button>
-            <button onClick={() => hook.callback('another Select function')}>another Select function</button>
-        </>
-    }
-
-    ToolbarMap.set(SQLCommandsEnum.SET, () => <SetToolbar/>);
-    ToolbarMap.set(SQLCommandsEnum.FROM, () => <FromToolbar/>);
-    ToolbarMap.set(SQLCommandsEnum.APPEND, () => <AppendToolbar/>);
-    ToolbarMap.set(SQLCommandsEnum.AS, () => <AsToolbar/>);
-    ToolbarMap.set(SQLCommandsEnum.SELECT, () => <SelectToolbar/>);
-
-    return <>
-        {ToolbarMap.has(commandKey) && ToolbarMap.get(commandKey)()}
-    </>
-
-}
-
-const constants = {
-    MONACO_COMMAND_CLASS_NAME: 'mtk6'
-}
-
-const CodeEditorToolbar = ({onToolbarClose, ...props})=>{
-
-    return <div className={'b-editor__toolbar'}>
-        <button onClick={onToolbarClose} className={'b-editor__tolbar__btn-close'}>X</button>
-        <div>
-            hello
-            {props.children}
-        </div>
-    </div>
-}
 
 const codeEditorUtils = {
     isCommand: function(target: any) {
@@ -177,12 +88,13 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
                 domNode.className = 'b-editor--toolbar__wrapper';
 
                 ReactDOM.render(
-                    <CodeEditorToolbar onToolbarClose={()=>{removeExistingToolbar()}}>
+
+                    <CodeEditorToolbarWrapper onToolbarClose={()=>{removeExistingToolbar()}}>
                         <ToolbarControls
                             commandKey={currentCommand}
                             callback={(e)=>{console.log(e)}}
                         />
-                    </CodeEditorToolbar>,
+                    </CodeEditorToolbarWrapper>,
                     domNode
                 );
 

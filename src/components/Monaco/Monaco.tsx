@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import Editor, { useMonaco, loader } from "@monaco-editor/react";
+import React, {useEffect, useRef} from 'react';
+import { loader } from "@monaco-editor/react";
 
 export type CodeEditorProps = {
 
@@ -7,8 +7,7 @@ export type CodeEditorProps = {
 };
 
 const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
-    {
-    }
+
 ) => {
 
     const wrapperRef = useRef(null);

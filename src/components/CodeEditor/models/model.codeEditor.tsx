@@ -10,7 +10,6 @@ export const codeEditorUtils = {
         const targetClassName = element.className;
 
         return targetClassName === monacoClassNames.SQL_COMMAND;
-
     },
     getClusterCommand: function(element: HTMLElement): SQLCommandsEnum {
         if(this.isCommand(element)) {
@@ -25,6 +24,7 @@ export default class CodeEditorModel {
     private existingCommand: string;
     private existingLineNumber: number;
     private callback: Function;
+    private domNode: HTMLElement = document.createElement('div');
 
     constructor(editor, callback) {
         this.editor = editor;
@@ -44,31 +44,38 @@ export default class CodeEditorModel {
 
         this.removeExistingToolbar();
 
-        this.editor.changeViewZones((changeAccessor) => {
-
-            const domNode = document.createElement('div');
-
-            domNode.className = 'b-editor--toolbar__wrapper';
-
-            ReactDOM.render(
-                <CodeEditorToolbarWrapper onToolbarClose={()=>{this.removeExistingToolbar()}}>
-                    {component}
-                </CodeEditorToolbarWrapper>,
-                domNode
-            );
-
-            this.viewZoneId = changeAccessor.addZone({
-                afterLineNumber: lineNumber - 1,
-                heightInLines: 3,
-                domNode: domNode
-            });
+        component && this.editor.changeViewZones((changeAccessor) => {
+            this.setDomNodeAttributes();
+            this.setViewZoneId(changeAccessor, lineNumber);
+            this.renderToolbar(component);
         });
 
     }
 
-    public showEvent(e){
+    private setDomNodeAttributes() {
+        this.domNode.className = 'b-editor--toolbar__wrapper';
+    }
 
+    private renderToolbar(component) {
+        ReactDOM.render(
+            <CodeEditorToolbarWrapper onToolbarClose={()=>{this.removeExistingToolbar()}}>
+                {component}
+            </CodeEditorToolbarWrapper>,
+            this.domNode,
+        );
+    }
+
+    private setViewZoneId(changeAccessor, lineNumber: number){
+        this.viewZoneId = changeAccessor.addZone({
+            afterLineNumber: lineNumber - 1,
+            heightInLines: 3,
+            domNode: this.domNode
+        });
+    }
+
+    public showEvent(e){
         const targetElement = e.target.element;
+
         if(!targetElement) return;
 
         if(codeEditorUtils.isCommand(e.target)) {

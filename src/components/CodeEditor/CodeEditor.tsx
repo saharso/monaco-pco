@@ -24,10 +24,59 @@ const codeEditorUtils = {
     },
 }
 
+class CodeEditorModel {
+    private editor;
+    private viewZoneId: string;
+    private existingCommand: string;
+    private existingLineNumber: number;
+
+    constructor(editor) {
+        this.editor = editor;
+    }
+
+    public removeExistingToolbar() {
+        if(!this.viewZoneId) return;
+        this.editor.changeViewZones(function(changeAccessor) {
+            changeAccessor.removeZone(this.viewZoneId);
+        });
+        this.existingCommand = this.existingLineNumber = null;
+    }
+
+    public addToolbar(lineNumber: number, currentCommand: SQLCommandsEnum) {
+
+        this.removeExistingToolbar();
+
+        this.editor.changeViewZones(function(changeAccessor) {
+
+            const domNode = document.createElement('div');
+
+            domNode.className = 'b-editor--toolbar__wrapper';
+
+            ReactDOM.render(
+
+                <CodeEditorToolbarWrapper onToolbarClose={()=>{this.removeExistingToolbar()}}>
+                    <ToolbarControls
+                        commandKey={currentCommand}
+                        callback={(e)=>{console.log(e)}}
+                    />
+                </CodeEditorToolbarWrapper>,
+                domNode
+            );
+
+            this.viewZoneId = changeAccessor.addZone({
+                afterLineNumber: lineNumber - 1,
+                heightInLines: 3,
+                domNode: domNode
+            });
+        });
+
+    }
+
+}
+
 export type CodeEditorProps = {
     value: string;
 };
-
 const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     {
         value,
@@ -48,7 +97,6 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
         const wrapper: HTMLElement = wrapperRef.current;
 
         loader.init().then(monaco => {
-
             setEditor(monaco.editor.create(wrapper,  monacoConfig));
         });
     }, [wrapperRef]);
@@ -61,6 +109,7 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     useEffect(()=>{
         if(!editor) return;
 
+        const editorModel = new CodeEditorModel(editor);
         let viewZoneId: string;
 
         let existingCommand: string;
@@ -105,7 +154,13 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
 
         }
 
-        function showEvent(e){
+        function onCommandHover(e, currentLineNumber, currentCommand){
+            addToolbar(currentLineNumber, currentCommand);
+
+            setCommand(currentCommand);
+        }
+
+        function showEvent(e, callback: Function){
 
             const targetElement = e.target.element;
             if(!targetElement) return;
@@ -115,11 +170,7 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
                 const currentLineNumber = e.target.position.lineNumber;
                 // execute if not same command as previous, unless line number not as previous
                 if(currentLineNumber !== existingLineNumber || existingCommand !== currentCommand) {
-
-                    addToolbar(currentLineNumber, currentCommand);
-
-                    setCommand(currentCommand);
-
+                    callback(e, currentLineNumber, currentCommand);
                 }
                 existingCommand = currentCommand;
                 existingLineNumber = currentLineNumber;
@@ -127,10 +178,10 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
             }
         }
         editor.onMouseMove(function (e) {
-            showEvent(e);
+            showEvent(e, onCommandHover);
         });
         editor.onMouseUp(function (e) {
-            showEvent(e);
+            showEvent(e, onCommandHover);
         });
     }, [editor]);
 

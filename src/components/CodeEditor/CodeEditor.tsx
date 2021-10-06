@@ -29,14 +29,17 @@ class CodeEditorModel {
     private viewZoneId: string;
     private existingCommand: string;
     private existingLineNumber: number;
+    private callback: Function;
 
-    constructor(editor) {
+    constructor(editor, callback) {
         this.editor = editor;
+        this.callback = callback;
+        this.handleEditorEvents();
     }
 
     public removeExistingToolbar() {
         if(!this.viewZoneId) return;
-        this.editor.changeViewZones(function(changeAccessor) {
+        this.editor.changeViewZones((changeAccessor) =>{
             changeAccessor.removeZone(this.viewZoneId);
         });
         this.existingCommand = this.existingLineNumber = null;
@@ -46,7 +49,7 @@ class CodeEditorModel {
 
         this.removeExistingToolbar();
 
-        this.editor.changeViewZones(function(changeAccessor) {
+        this.editor.changeViewZones((changeAccessor) => {
 
             const domNode = document.createElement('div');
 
@@ -70,6 +73,33 @@ class CodeEditorModel {
             });
         });
 
+    }
+
+    public showEvent(e, callback: Function){
+
+        const targetElement = e.target.element;
+        if(!targetElement) return;
+
+        if(codeEditorUtils.isCommand(e.target)) {
+            const currentCommand = codeEditorUtils.getClusterCommand(targetElement);
+            const currentLineNumber = e.target.position.lineNumber;
+            // execute if not same command as previous, unless line number not as previous
+            if(currentLineNumber !== this.existingLineNumber || this.existingCommand !== currentCommand) {
+                this.callback(e, currentLineNumber, currentCommand);
+            }
+            this.existingCommand = currentCommand;
+            this.existingLineNumber = currentLineNumber;
+
+        }
+    }
+
+    private handleEditorEvents(){
+        this.editor.onMouseMove((e) => {
+            this.showEvent(e, this.callback);
+        });
+        this.editor.onMouseUp((e) => {
+            this.showEvent(e, this.callback);
+        });
     }
 
 }
@@ -109,85 +139,17 @@ const CodeEditor: React.FunctionComponent<CodeEditorProps> = (
     useEffect(()=>{
         if(!editor) return;
 
-        const editorModel = new CodeEditorModel(editor);
-        let viewZoneId: string;
-
-        let existingCommand: string;
-
-        let existingLineNumber: number;
-
-        function removeExistingToolbar(){
-            if(!viewZoneId) return;
-            editor.changeViewZones(function(changeAccessor) {
-                changeAccessor.removeZone(viewZoneId);
-            });
-            existingCommand = existingLineNumber = null;
-        }
-
-        function addToolbar(lineNumber: number, currentCommand: SQLCommandsEnum) {
-
-            removeExistingToolbar();
-
-            editor.changeViewZones(function(changeAccessor) {
-
-                const domNode = document.createElement('div');
-
-                domNode.className = 'b-editor--toolbar__wrapper';
-
-                ReactDOM.render(
-
-                    <CodeEditorToolbarWrapper onToolbarClose={()=>{removeExistingToolbar()}}>
-                        <ToolbarControls
-                            commandKey={currentCommand}
-                            callback={(e)=>{console.log(e)}}
-                        />
-                    </CodeEditorToolbarWrapper>,
-                    domNode
-                );
-
-                viewZoneId = changeAccessor.addZone({
-                    afterLineNumber: lineNumber - 1,
-                    heightInLines: 3,
-                    domNode: domNode
-                });
-            });
-
-        }
+        const editorModel = new CodeEditorModel(editor, onCommandHover);
 
         function onCommandHover(e, currentLineNumber, currentCommand){
-            addToolbar(currentLineNumber, currentCommand);
+
+            editorModel.addToolbar(currentLineNumber, currentCommand);
 
             setCommand(currentCommand);
+
         }
 
-        function showEvent(e, callback: Function){
-
-            const targetElement = e.target.element;
-            if(!targetElement) return;
-
-            if(codeEditorUtils.isCommand(e.target)) {
-                const currentCommand = codeEditorUtils.getClusterCommand(targetElement);
-                const currentLineNumber = e.target.position.lineNumber;
-                // execute if not same command as previous, unless line number not as previous
-                if(currentLineNumber !== existingLineNumber || existingCommand !== currentCommand) {
-                    callback(e, currentLineNumber, currentCommand);
-                }
-                existingCommand = currentCommand;
-                existingLineNumber = currentLineNumber;
-
-            }
-        }
-        editor.onMouseMove(function (e) {
-            showEvent(e, onCommandHover);
-        });
-        editor.onMouseUp(function (e) {
-            showEvent(e, onCommandHover);
-        });
     }, [editor]);
-
-    useEffect(()=>{
-        console.log(onToolbarClick.value);
-    }, [onToolbarClick.value])
 
     return (
         <div className={'b-editor'}>

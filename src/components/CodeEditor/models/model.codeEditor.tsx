@@ -4,13 +4,81 @@ import CodeEditorToolbarWrapper from "../components/ToolbarWrapper";
 import monacoClassNames from "./consts.monacoClassNames";
 import SQLCommandsEnum from "./enum.SQLCommands";
 
+const complexCommands = [
+    'ORDER_BY',
+    'GROUP_BY'
+]
+
+export const complexCommandsUtils = {
+    getCommandPart(index: number = 0){
+        const set = new Set();
+        complexCommands.forEach(e => set.add(e.split('_')[index]));
+        return Array.from(set);
+    },
+}
+
 export const codeEditorUtils = {
-    isCommand: function(target: any) {
-        const element = target instanceof Element ? target : target.element;
+    getElement(target){
+        return target instanceof Element ? target : target.element;
+    },
+
+    getElementText(element: HTMLElement): string {
+        return element.textContent.replace(/\s/g,'');
+    },
+
+    isCommand: function(target: any): boolean {
+        const element = this.getElement(target);
         const targetClassName = element.className;
 
         return targetClassName === monacoClassNames.SQL_COMMAND;
     },
+
+    isComplexCommandEnding: function(target: any): boolean {
+        const element = this.getElement(target);
+        if(!this.isCommand(element)) return false;
+        const elementText = this.getElementText(element);
+
+        return complexCommandsUtils.getCommandPart(1).includes(elementText);
+    },
+    isComplexCommandStarting: function(target: any): boolean {
+        const element = this.getElement(target);
+        if(!this.isCommand(element)) return false;
+        const elementText = this.getElementText(element);
+
+        return complexCommandsUtils.getCommandPart(0).includes(elementText);
+    },
+
+    isDefaultBlock: function(target: any) {
+        const element = this.getElement(target);
+        const targetClassName = element.className;
+
+        return targetClassName === monacoClassNames.DEFAULT;
+    },
+
+    isWhiteSpaceBlock: function(target: any) {
+        const element = this.getElement(target);
+        const isWhiteSpaceOnlyBlock = this.getElementText(element) === '';
+
+        return isWhiteSpaceOnlyBlock;
+    },
+
+    buildComplexCommand: function(target: any) {
+        const element = this.getElement(target);
+        let cond = false;
+        const rec = (element)=>{
+            const sib = element.previousElementSibling;
+            if(!sib) return;
+            if(this.isComplexCommandStarting(sib)) {
+                rec(sib);
+                cond = true;
+            } else {
+                rec(sib);
+            }
+        }
+        rec(element);
+        console.log(cond);
+    },
+
     getClusterCommand: function(element: HTMLElement): SQLCommandsEnum {
         if(this.isCommand(element)) {
             return element.textContent.toUpperCase() as SQLCommandsEnum;
@@ -73,7 +141,7 @@ export default class CodeEditorModel {
         });
     }
 
-    public showEvent(e){
+    private handleEditorEvent(e){
         const targetElement = e.target.element;
 
         if(!targetElement) return;
@@ -93,7 +161,7 @@ export default class CodeEditorModel {
 
     private handleEditorEvents(){
         this.editor.onMouseMove((e) => {
-            this.showEvent(e);
+            this.handleEditorEvent(e);
         });
     }
 

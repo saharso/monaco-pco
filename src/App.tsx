@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.scss';
-import CodeEditor from "./components/CodeEditor/CodeEditor";
+import CodeEditorLSP from "./components/CodeEditorLSP/CodeEditorLSP";
 
 const valueMock = "SET partition_date = UNIX_EPOCH_TO_DATE(time);\n" +
         "SET NewNew = headers.head.index + 1;\n" +
@@ -20,11 +20,19 @@ const valueMock = "SET partition_date = UNIX_EPOCH_TO_DATE(time);\n" +
         "       APPEND ON DUPLICATE\n" +
         "-- read more about export job in the documentation button >> (?)\n";
 
+const jsonMock = `
+{
+\t"dependencies": {
+\t\t
+\t}
+}
+    
+`
 function App() {
   return (
     <div className="b-app">
-      <CodeEditor
-        value={valueMock}
+      <CodeEditorLSP
+        value={jsonMock}
       />
     </div>
   );
